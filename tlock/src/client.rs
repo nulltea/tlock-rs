@@ -67,7 +67,7 @@ impl Network {
 
         let public_key = {
             let bytes = (&*res.public_key).try_into()
-                .map_err(|e| anyhow!("invalid public key size"))?;
+                .map_err(|_| anyhow!("invalid public key size"))?;
             G1Affine::from_compressed(bytes).unwrap()
         };
 

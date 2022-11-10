@@ -30,7 +30,7 @@ pub async fn encrypt<W: io::Write, R: io::Read>(network: Network, mut dst: W, mu
 }
 
 pub async fn decrypt<W: io::Write, R: io::Read>(network: Network, mut dst: W, mut src: R) -> anyhow::Result<()> {
-    let mut round = unsigned_varint::io::read_u64(&mut src).map_err(|e| anyhow!("error reading {e}"))?;
+    let round = unsigned_varint::io::read_u64(&mut src).map_err(|e| anyhow!("error reading {e}"))?;
 
     let c = {
         let mut u = [0u8;48];
@@ -75,6 +75,7 @@ pub fn time_unlock(beacon: Beacon, c: &Ciphertext) -> Vec<u8> {
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
     use crate::client::ChainInfo;
     use super::*;
 
@@ -84,7 +85,8 @@ mod tests {
         let info = ChainInfo {
             public_key: G1Affine::from_compressed((&*pk_bytes).try_into().unwrap()).unwrap(),
             hash: "7672797f548f3f4748ac4bf3352fc6c6b6468c9ad40ad456a397545c6e2df5bf".to_string(),
-            period: 25
+            period: Duration::new(5, 0),
+            genesis_time: 0
         };
 
         let msg = vec![8;32];

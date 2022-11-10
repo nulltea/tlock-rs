@@ -1,5 +1,5 @@
 use std::ops::Add;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use crate::client::ChainInfo;
 
 pub fn round_at(chain_info: ChainInfo, t: SystemTime) -> u64 {

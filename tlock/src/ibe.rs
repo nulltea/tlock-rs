@@ -1,9 +1,7 @@
 use std::ops::Mul;
-use bls12_381_plus::{ExpandMsgXmd, G1Affine, G1Projective, G2Affine, G2Projective, Gt, Scalar};
-use rand::distributions::Uniform;
+use bls12_381_plus::{ExpandMsgXmd, G1Affine, G2Affine, G2Projective, Scalar};
 use rand::Rng;
 use sha2::{Digest, Sha256};
-use sha2::digest::generic_array::GenericArray;
 use group::{Curve, GroupEncoding};
 
 #[derive(Clone, Debug)]
@@ -17,7 +15,7 @@ const BLOCK_SIZE: usize = 32;
 const H2C_DST: &[u8] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
 
 pub fn encrypt<I: AsRef<[u8]>, M: AsRef<[u8]>>(master: G1Affine, id: I, msg: M) -> Ciphertext {
-    assert!(msg.as_ref().len() >= BLOCK_SIZE, "plaintext too long for the block size");
+    assert!(msg.as_ref().len() <= BLOCK_SIZE, "plaintext too long for the block size");
 
     let mut rng = rand::thread_rng();
     // 1. Compute Gid = e(master,Q_id)
@@ -25,7 +23,7 @@ pub fn encrypt<I: AsRef<[u8]>, M: AsRef<[u8]>>(master: G1Affine, id: I, msg: M) 
         let qid = G2Projective::hash::<ExpandMsgXmd<Sha256>>(id.as_ref(), H2C_DST)
             .to_affine()
             .to_bytes();
-        let qid= {
+        let qid = {
             G2Affine::from_compressed((qid.as_ref()).try_into().unwrap()).unwrap()
         };
 
@@ -78,16 +76,16 @@ pub fn encrypt<I: AsRef<[u8]>, M: AsRef<[u8]>>(master: G1Affine, id: I, msg: M) 
         xor(msg.as_ref(), h_sigma)
     };
 
-    Ciphertext{
+    Ciphertext {
         u,
         v,
-        w
+        w,
     }
 }
 
 
 pub fn decrypt(private: G2Affine, c: &Ciphertext) -> Vec<u8> {
-    assert!(c.w.len() >= BLOCK_SIZE, "ciphertext too long for the block size");
+    assert!(c.w.len() <= BLOCK_SIZE, "ciphertext too long for the block size");
 
     // 1. Compute sigma = V XOR H2(e(rP,private))
     let sigma = {
@@ -126,4 +124,3 @@ pub fn decrypt(private: G2Affine, c: &Ciphertext) -> Vec<u8> {
 fn xor(a: &[u8], b: &[u8]) -> Vec<u8> {
     a.iter().zip(b.iter()).map(|(a, b)| a ^ b).collect()
 }
-
