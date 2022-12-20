@@ -6,6 +6,7 @@ use std::io;
 use anyhow::anyhow;
 use bls12_381_plus::{G1Affine, G2Affine};
 use sha2::Digest;
+use tracing::info_span;
 use crate::ibe::Ciphertext;
 use crate::client::{Beacon, Network};
 
@@ -15,7 +16,7 @@ pub async fn encrypt<W: io::Write, R: io::Read>(network: Network, mut dst: W, mu
     let mut message = [0; 32];
     src.read(&mut message).map_err(|e| anyhow!("error reading {e}"))?;
 
-    let ct = time_lock(info.public_key, round_number, message);
+    let ct = info_span!("ibe::encryption").in_scope(|| time_lock(info.public_key, round_number, message));
 
     {
         let mut buffer = unsigned_varint::encode::u64_buffer();
@@ -85,7 +86,7 @@ mod tests {
         let info = ChainInfo {
             public_key: G1Affine::from_compressed((&*pk_bytes).try_into().unwrap()).unwrap(),
             hash: "7672797f548f3f4748ac4bf3352fc6c6b6468c9ad40ad456a397545c6e2df5bf".to_string(),
-            period: Duration::new(5, 0),
+            period: Duration::from_secs(25),
             genesis_time: 0
         };
 

@@ -1,8 +1,11 @@
 use std::ops::Mul;
-use bls12_381_plus::{ExpandMsgXmd, G1Affine, G2Affine, G2Projective, Scalar};
-use rand::Rng;
+use bls12_381_plus::{ExpandMsgXmd, G1Affine, G1Projective, G2Affine, G2Projective, Gt, Scalar};
+use rand::distributions::Uniform;
+use rand::{Rng, thread_rng};
 use sha2::{Digest, Sha256};
 use group::{Curve, GroupEncoding};
+use itertools::Itertools;
+
 
 #[derive(Clone, Debug)]
 pub struct Ciphertext {
@@ -12,7 +15,7 @@ pub struct Ciphertext {
 }
 
 const BLOCK_SIZE: usize = 32;
-const H2C_DST: &[u8] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
+pub const H2C_DST: &[u8] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
 
 pub fn encrypt<I: AsRef<[u8]>, M: AsRef<[u8]>>(master: G1Affine, id: I, msg: M) -> Ciphertext {
     assert!(msg.as_ref().len() <= BLOCK_SIZE, "plaintext too long for the block size");
@@ -21,11 +24,7 @@ pub fn encrypt<I: AsRef<[u8]>, M: AsRef<[u8]>>(master: G1Affine, id: I, msg: M) 
     // 1. Compute Gid = e(master,Q_id)
     let gid = {
         let qid = G2Projective::hash::<ExpandMsgXmd<Sha256>>(id.as_ref(), H2C_DST)
-            .to_affine()
-            .to_bytes();
-        let qid = {
-            G2Affine::from_compressed((qid.as_ref()).try_into().unwrap()).unwrap()
-        };
+            .to_affine();
 
         bls12_381_plus::pairing(&master, &qid)
     };
@@ -34,8 +33,7 @@ pub fn encrypt<I: AsRef<[u8]>, M: AsRef<[u8]>>(master: G1Affine, id: I, msg: M) 
     /// otherwise can `Scalar::from_bytes(r).unwrap()` panic from subtle crate
     let (sigma, r) = loop {
         // 2. Derive random sigma
-        let sigma: [u8; BLOCK_SIZE] = rng.gen();
-
+        let sigma: [u8; BLOCK_SIZE] = (0..BLOCK_SIZE).map(|_| rng.sample(&Uniform::new(0u8, 8u8))).collect_vec().try_into().unwrap();
 
         // 3. Derive r from sigma and msg
         let r = {
@@ -54,7 +52,8 @@ pub fn encrypt<I: AsRef<[u8]>, M: AsRef<[u8]>>(master: G1Affine, id: I, msg: M) 
     };
 
     // 4. Compute U = G^r
-    let u = (G1Affine::generator() * r).to_affine();
+    let g = G1Affine::generator();
+    let u = (G1Affine::generator().mul(r)).to_affine();
 
     // 5. Compute V = sigma XOR H(rGid)
     let v = {
@@ -83,7 +82,6 @@ pub fn encrypt<I: AsRef<[u8]>, M: AsRef<[u8]>>(master: G1Affine, id: I, msg: M) 
     }
 }
 
-
 pub fn decrypt(private: G2Affine, c: &Ciphertext) -> Vec<u8> {
     assert!(c.w.len() <= BLOCK_SIZE, "ciphertext too long for the block size");
 
@@ -106,8 +104,8 @@ pub fn decrypt(private: G2Affine, c: &Ciphertext) -> Vec<u8> {
         xor(h_sigma, &c.w)
     };
 
-    // 3. Check U = rP
-    let r_p = {
+    // 3. Check U = G^r
+    let r_g = {
         let mut hash = sha2::Sha256::new();
         hash.update(b"h3");
         hash.update(&sigma[..]);
@@ -116,7 +114,7 @@ pub fn decrypt(private: G2Affine, c: &Ciphertext) -> Vec<u8> {
         let r = Scalar::from_bytes(r.try_into().unwrap()).unwrap();
         (G1Affine::generator() * r).to_affine()
     };
-    assert_eq!(c.u, r_p);
+    assert_eq!(c.u, r_g);
 
     msg
 }

@@ -20,3 +20,5 @@ unsigned-varint = { version = "0.7", features = [
     "futures",
     "asynchronous_codec",
 ] }
+tracing = "0.1.36"
+itertools = "0.10.5"

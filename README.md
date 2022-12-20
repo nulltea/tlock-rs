@@ -1,4 +1,4 @@
-# rs-tlock: Practical Timelock Encryption/Decryption in Rust
+# tlock-rs: Practical Timelock Encryption/Decryption in Rust
 
 This repo contains pure Rust implementation of [`drand/tlock`](https://github.com/drand/tlock) scheme. It provides time-based encryption and decryption capabilities by relying on a [drand](https://drand.love/) threshold network and identity-based encryption (IBE). The IBE scheme implemented here is [`Boneh-Franklin`](https://crypto.stanford.edu/~dabo/papers/bfibe.pdf).
 

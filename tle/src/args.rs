@@ -1,58 +1,54 @@
 use std::time::Duration;
-use duration_string::DurationString;
-use gumdrop::{Opt, Options};
+use clap::{Args, Parser};
+// use clap_duration::duration_range_value_parse;
 
-#[derive(Debug, Options, Clone)]
-pub struct CLIArgs {
-    help: bool,
-    #[options(command)]
+#[derive(Clone, Parser)]
+pub struct Options {
+    #[command(subcommand)]
     pub command: Option<Command>,
 }
 
-#[derive(Debug, Options, Clone)]
+#[derive(Clone, clap::Subcommand)]
 pub enum Command {
-    #[options(help = "Lock file until specified drand round")]
+    #[command(about = "Lock file until specified drand round")]
     Lock(LockArgs),
-    #[options(help = "Try unlocking the file")]
+
+    #[command(about = "Try unlocking the file")]
     Unlock(UnlockArgs),
 }
 
-#[derive(Debug, Options, Clone)]
+#[derive(Clone, Args)]
 pub struct LockArgs {
-    help: bool,
-
-    #[options(free)]
+    #[clap(index = 1, help = "plaintext file path")]
     pub input_path: String,
 
-    #[options(help = "write the result to the file at path OUTPUT", default = "./locked.pem")]
+    #[clap(short, long, default_value = "./locked.pem", help = "write the result to the file at path OUTPUT")]
     pub output_path: String,
 
-    #[options(help = "round number")]
+    #[clap(short, long, help = "round number")]
     pub round_number: Option<u64>,
 
-    #[options(help = "lock duration")]
-    pub duration: Option<String>,
+    #[clap(short, long, help = "lock file for duration (y/w/d/h/m/s/ms)")]
+    pub duration: Option<humantime::Duration>,
 
-    #[options(help = "drand network host url", default = "https://pl-us.testnet.drand.sh")]
+    #[clap(short, long, default_value = "https://pl-us.testnet.drand.sh", help = "drand network host url")]
     pub network_host: String,
 
-    #[options(help = "drand chain hash", default = "7672797f548f3f4748ac4bf3352fc6c6b6468c9ad40ad456a397545c6e2df5bf")]
+    #[clap(short, long, default_value = "7672797f548f3f4748ac4bf3352fc6c6b6468c9ad40ad456a397545c6e2df5bf", help = "drand chain hash")]
     pub chain_hash: String,
 }
 
-#[derive(Debug, Options, Clone)]
+#[derive(Clone, Args)]
 pub struct UnlockArgs {
-    help: bool,
-
-    #[options(free)]
+    #[clap(index = 1, help = "ciphertext file path")]
     pub input_path: String,
 
-    #[options(help = "write the result to the file at path OUTPUT", default = "./unlocked.pem")]
+    #[clap(short, long, default_value = "./unlocked.pem", help = "write the result to the file at path OUTPUT")]
     pub output_path: String,
 
-    #[options(help = "drand network host url", default = "https://pl-us.testnet.drand.sh")]
+    #[clap(short, long, default_value = "https://pl-us.testnet.drand.sh", help = "drand network host url")]
     pub network_host: String,
 
-    #[options(help = "drand chain hash", default = "7672797f548f3f4748ac4bf3352fc6c6b6468c9ad40ad456a397545c6e2df5bf")]
+    #[clap(short, long, default_value = "7672797f548f3f4748ac4bf3352fc6c6b6468c9ad40ad456a397545c6e2df5bf", help = "drand chain hash")]
     pub chain_hash: String,
 }
