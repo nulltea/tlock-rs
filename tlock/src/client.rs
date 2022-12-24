@@ -4,6 +4,7 @@ use bls12_381_plus::G1Affine;
 use url::Url;
 use serde::{Serialize, Deserialize};
 
+#[derive(Clone)]
 pub struct Network {
     client: surf::Client,
     chain_hash: String
@@ -40,8 +41,9 @@ impl Network {
         let url = {
             let base = Url::parse(host.as_ref())
                 .map_err(|e| anyhow!("error parsing network host: {e}"))?;
-            base.join(&format!("{}/", chain_hash.as_ref())).map_err(|e| anyhow!("error joining chain hash: {e}"))?
-        };
+            base.join(&format!("{}/", chain_hash.as_ref()))
+                .map_err(|e| anyhow!("error joining chain hash: {e}"))
+        }?;
         let config = surf::Config::new().set_base_url(url).set_timeout(None);
         Ok(Self {
             client: config.try_into()?,

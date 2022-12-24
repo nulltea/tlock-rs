@@ -5,9 +5,9 @@ use rand::{Rng, thread_rng};
 use sha2::{Digest, Sha256};
 use group::{Curve, GroupEncoding};
 use itertools::Itertools;
+use serde::{Serialize, Deserialize};
 
-
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Ciphertext {
     pub u: G1Affine,
     pub v: Vec<u8>,

@@ -2,13 +2,13 @@ use std::ops::Add;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use crate::client::ChainInfo;
 
-pub fn round_at(chain_info: ChainInfo, t: SystemTime) -> u64 {
+pub fn round_at(chain_info: &ChainInfo, t: SystemTime) -> u64 {
     let since_epoch = t.duration_since(UNIX_EPOCH).unwrap();
     let t_unix = since_epoch.as_secs();
     current_round(t_unix, chain_info.period, chain_info.genesis_time)
 }
 
-pub fn round_after(chain_info: ChainInfo, d: Duration) -> u64 {
+pub fn round_after(chain_info: &ChainInfo, d: Duration) -> u64 {
     let t = SystemTime::now().add(d);
     round_at(chain_info, t)
 }
@@ -33,4 +33,15 @@ pub fn next_round(now: u64, period: Duration, genesis: u64) -> (u64, u64) {
     let next_time = genesis + next_round*period.as_secs();
 
     (next_round, next_time)
+}
+
+pub fn dur_before(chain_info: &ChainInfo, round: u64) -> Duration {
+    let t = SystemTime::now();
+    let since_epoch = t.duration_since(UNIX_EPOCH).unwrap();
+    let t_unix = since_epoch.as_secs();
+
+    let current = current_round(t_unix, chain_info.period, chain_info.genesis_time);
+    let rounds = (round - current) as u32;
+
+    chain_info.period * rounds
 }

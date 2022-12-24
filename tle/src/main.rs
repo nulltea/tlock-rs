@@ -31,7 +31,7 @@ async fn lock(args: LockArgs) -> anyhow::Result<()> {
     let round_number = match args.round_number {
         None => {
             let d = args.duration.expect("duration is expected if round_number isn't specified").into();
-            time::round_after(info, d)
+            time::round_after(&info, d)
         },
         Some(n) => n,
     };
